@@ -2,8 +2,9 @@ from distutils.core import setup, Extension
 
 module1 = Extension('extended_audioop',
 #										extra_compile_args = ['-E'],
-                    sources = ['extended_audioop.c'],
-										define_macros = [('DEBUG',None)])
+                    sources = ['extended_audioop.c']
+#										define_macros = [('DEBUG',None)]
+										)
 
 #module1 = Extension('audioop',
 #                    sources = ['audioop.c'])
