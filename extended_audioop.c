@@ -1759,6 +1759,130 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
     return rv;
 }
 
+static PyObject *audioop_endianconv_3(PyObject *self, PyObject *args)
+{
+	signed char *chunk;
+	unsigned char *ncp;
+	int width, len;
+	unsigned long ptr;
+	unsigned long c_end;
+	PyObject *rv;
+
+	if (!PyArg_ParseTuple(args, "s#i:endianconv", &chunk, &len, &width)) {
+		return NULL;
+	}
+
+	if (len % width) {
+		PyErr_SetString(AudioopError, "Array length do not match given width");
+		return NULL;
+	}
+	
+	rv = PyString_FromStringAndSize(NULL, len);
+	if (rv == 0) {
+		return NULL;
+	}
+	ncp = (unsigned char*)PyString_AsString(rv);
+
+
+	c_end = (unsigned long)chunk + len;
+	while((unsigned long)chunk != c_end) {
+		ptr = (long)ncp;
+		ncp += width;
+		while(ptr != (unsigned long)ncp) {
+			ncp--;
+			*ncp = *chunk;
+			chunk++;
+		}
+		ncp += width;
+	}
+
+	return rv;
+	
+}
+
+static PyObject *audioop_endianconv_2(PyObject *self, PyObject *args)
+{
+	signed char *chunk;
+	unsigned char *ncp;
+	int width, len, i;
+	PyObject *rv;
+
+	if (!PyArg_ParseTuple(args, "s#i:endianconv", &chunk, &len, &width)) {
+		return NULL;
+	}
+
+	if (len % width) {
+		PyErr_SetString(AudioopError, "Array length do not match given width");
+		return NULL;
+	}
+	
+	rv = PyString_FromStringAndSize(NULL, len);
+	if (rv == 0) {
+		return NULL;
+	}
+	ncp = (unsigned char*)PyString_AsString(rv);
+	for (i = 0; i < len; i += width) {
+		if (width == 2) {
+			ncp[i] = chunk[i+1];
+			ncp[i+1] = chunk[i];
+		} else if (width == 3) {
+			ncp[i] = chunk[i+2];
+			ncp[i+1] = chunk[i+1];
+			ncp[i+2] = chunk[i];
+		} else if (width == 4) {
+			ncp[i] = chunk[i+3];
+			ncp[i+1] = chunk[i+2];
+			ncp[i+2] = chunk[i+1];
+			ncp[i+3] = chunk[i];
+		}
+	}
+	return rv;
+}
+static PyObject *audioop_endianconv(PyObject *self, PyObject *args)
+{
+	signed char *chunk;
+	unsigned char *ncp;
+	int width, len, i;
+	PyObject *rv;
+
+	if (!PyArg_ParseTuple(args, "s#i:endianconv", &chunk, &len, &width)) {
+		return NULL;
+	}
+
+	if (!audioop_check_parameters(len, width)) {
+		return NULL;
+	}
+	
+	rv = PyString_FromStringAndSize(NULL, len);
+	if (rv == 0) {
+		return NULL;
+	}
+	ncp = (unsigned char*)PyString_AsString(rv);
+	if (width == 2) {
+		for (i = 0; i < len; i += 2) {
+			ncp[i] = chunk[i+1];
+			ncp[i+1] = chunk[i];
+		}
+	} else if (width == 3) {
+		for (i = 0; i < len; i += 3) {
+			ncp[i] = chunk[i+2];
+			ncp[i+1] = chunk[i+1];
+			ncp[i+2] = chunk[i];
+		}
+	} else if (width == 4) {
+		for (i = 0; i < len; i += 4) {
+			ncp[i] = chunk[i+3];
+			ncp[i+1] = chunk[i+2];
+			ncp[i+2] = chunk[i+1];
+			ncp[i+3] = chunk[i];
+		}
+	} else {
+		PyErr_SetString(AudioopError, "width must be 2, 3 or 4");
+		return NULL;
+	}
+
+	return rv;
+}
 static PyMethodDef audioop_methods[] = {
     { "max", audioop_max, METH_VARARGS }, 								// Extended
     { "minmax", audioop_minmax, METH_VARARGS }, 					// Extended
@@ -1785,20 +1909,23 @@ static PyMethodDef audioop_methods[] = {
     { "getsample", audioop_getsample, METH_VARARGS },			// Extended
     { "reverse", audioop_reverse, METH_VARARGS },					// Extended
     { "ratecv", audioop_ratecv, METH_VARARGS },						// Extended
+    { "endianconv", audioop_endianconv, METH_VARARGS },		// Extended
+    { "endianconv2", audioop_endianconv_2, METH_VARARGS },// Extended
+    { "endianconv3", audioop_endianconv_3, METH_VARARGS },// Extended
     { 0,          0 }
 };
 
 PyMODINIT_FUNC
-initaudioop(void)
+initextended_audioop(void)
 {
     PyObject *m, *d;
-    m = Py_InitModule("extended-audioop", audioop_methods);
+    m = Py_InitModule("extended_audioop", audioop_methods);
     if (m == NULL)
         return;
     d = PyModule_GetDict(m);
     if (d == NULL)
         return;
-    AudioopError = PyErr_NewException("audioop.error", NULL, NULL);
+    AudioopError = PyErr_NewException("extended_audioop.error", NULL, NULL);
     if (AudioopError != NULL)
          PyDict_SetItemString(d,"error",AudioopError);
 }
