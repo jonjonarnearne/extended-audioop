@@ -18,6 +18,8 @@ typedef unsigned long Py_UInt32;
 
 typedef short PyInt16;
 
+typedef struct Py_Int24_Tag { signed char buf[3]; } Py_Int24;
+
 #if defined(__CHAR_UNSIGNED__)
 #if defined(signed)
 /* This module currently does not work on systems where only unsigned
@@ -330,6 +332,9 @@ static int stepsizeTable[89] = {
 #define SHORTP(cp, i) ((short *)(cp+i))
 #define LONGP(cp, i) ((Py_Int32 *)(cp+i))
 
+//CORRECT:             test = (INT & 0xffffff) ^ 0x800000) - 0x800000;
+//NOT PORTABLE,FASTER: test = ((INT & 0xffffff) << 0x8) >> 0x8;
+#define SIGNED_24BITS(i) (((i & 0xffffff) ^ 0x800000) - 0x800000)
 
 static PyObject *AudioopError;
 
@@ -373,10 +378,8 @@ audioop_getsample(PyObject *self, PyObject *args)
     }
     if ( size == 1 )      val = (int)*CHARP(cp, i);
     else if ( size == 2 ) val = (int)*SHORTP(cp, i*2);
-    else if ( size == 3 ) {
-        val = (int)*LONGP(cp, i*3) & 0x00ffffff;
-        val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-    } else if ( size == 4 ) val = (int)*LONGP(cp, i*4);
+    else if ( size == 3 ) val = SIGNED_24BITS((int)*LONGP(cp,i*3));
+    else if ( size == 4 ) val = (int)*LONGP(cp, i*4);
     return PyInt_FromLong(val);
 }
 
@@ -395,10 +398,8 @@ audioop_max(PyObject *self, PyObject *args)
     for ( i=0; i<len; i+= size) {
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
-        else if ( size == 3 ) {
-            val = (int)*LONGP(cp, i) & 0x00ffffff;
-            val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-        } else if ( size == 4 ) val = (int)*LONGP(cp, i);
+    		else if ( size == 3 ) val = SIGNED_24BITS((int)*LONGP(cp,i));
+        else if ( size == 4 ) val = (int)*LONGP(cp, i);
         if ( val < 0 ) val = (-val);
         if ( val > max ) max = val;
     }
@@ -421,10 +422,8 @@ audioop_minmax(PyObject *self, PyObject *args)
         if (size == 1) val = (int) *CHARP(cp, i);
         else if (size == 2) val = (int) *SHORTP(cp, i);
         else if (size == 2) val = (int) *SHORTP(cp, i);
-        else if ( size == 3 ) {
-            val = (int)*LONGP(cp, i) & 0x00ffffff;
-            val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-        } else if (size == 4) val = (int) *LONGP(cp, i);
+        else if (size == 3) val = SIGNED_24BITS((int)*LONGP(cp,i));
+        else if (size == 4) val = (int) *LONGP(cp, i);
         if (val > max) max = val;
         if (val < min) min = val;
     }
@@ -446,10 +445,8 @@ audioop_avg(PyObject *self, PyObject *args)
     for ( i=0; i<len; i+= size) {
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
-        else if ( size == 3 ) {
-            val = (int)*LONGP(cp, i) & 0x00ffffff;
-            val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-        } else if ( size == 4 ) val = (int)*LONGP(cp, i);
+        else if ( size == 3 ) val = SIGNED_24BITS((int)*LONGP(cp,i));
+        else if ( size == 4 ) val = (int)*LONGP(cp, i);
         avg += val;
     }
     if ( len == 0 )
@@ -474,10 +471,8 @@ audioop_rms(PyObject *self, PyObject *args)
     for ( i=0; i<len; i+= size) {
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
-        else if ( size == 3 ) {
-            val = (int)*LONGP(cp, i) & 0x00ffffff;
-            val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-        } else if ( size == 4 ) val = (int)*LONGP(cp, i);
+        else if ( size == 3 ) val = SIGNED_24BITS((int)*LONGP(cp,i));
+        else if ( size == 4 ) val = (int)*LONGP(cp, i);
         sum_squares += (double)val*(double)val;
     }
     if ( len == 0 )
@@ -688,25 +683,19 @@ audioop_avgpp(PyObject *self, PyObject *args)
     */
     if ( size == 1 )      prevval = (int)*CHARP(cp, 0);
     else if ( size == 2 ) prevval = (int)*SHORTP(cp, 0);
-    else if ( size == 3 ) {
-        prevval = (int)*LONGP(cp, 0) & 0x00ffffff;
-        prevval |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-    } else if ( size == 4 ) prevval = (int)*LONGP(cp, 0);
+    else if ( size == 3 ) prevval = SIGNED_24BITS((int)*LONGP(cp, 0));
+    else if ( size == 4 ) prevval = (int)*LONGP(cp, 0);
     if ( size == 1 )      val = (int)*CHARP(cp, size);
     else if ( size == 2 ) val = (int)*SHORTP(cp, size);
-    else if ( size == 3 ) {
-        val = (int)*LONGP(cp, size) & 0x00ffffff;
-        val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-    } else if ( size == 4 ) val = (int)*LONGP(cp, size);
+    else if ( size == 3 ) val = SIGNED_24BITS((int)*LONGP(cp, size));
+    else if ( size == 4 ) val = (int)*LONGP(cp, size);
     prevdiff = val - prevval;
 
     for ( i=size; i<len; i+= size) {
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
-        else if ( size == 3 ) {
-            val = (int)*LONGP(cp, i) & 0x00ffffff;
-            val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-        } else if ( size == 4 ) val = (int)*LONGP(cp, i);
+        else if ( size == 3 ) val = SIGNED_24BITS((int)*LONGP(cp, i));
+        else if ( size == 4 ) val = (int)*LONGP(cp, i);
         diff = val - prevval;
         if ( diff*prevdiff < 0 ) {
             /* Derivative changed sign. Compute difference to last
@@ -752,25 +741,19 @@ audioop_maxpp(PyObject *self, PyObject *args)
     */
     if ( size == 1 )      prevval = (int)*CHARP(cp, 0);
     else if ( size == 2 ) prevval = (int)*SHORTP(cp, 0);
-    else if ( size == 3 ) {
-        prevval = (int)*LONGP(cp, 0) & 0x00ffffff;
-        prevval |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-    } else if ( size == 4 ) prevval = (int)*LONGP(cp, 0);
+    else if ( size == 3 ) prevval = SIGNED_24BITS((int)*LONGP(cp, 0));
+    else if ( size == 4 ) prevval = (int)*LONGP(cp, 0);
     if ( size == 1 )      val = (int)*CHARP(cp, size);
     else if ( size == 2 ) val = (int)*SHORTP(cp, size);
-    else if ( size == 3 ) {
-        val = (int)*LONGP(cp, size) & 0x00ffffff;
-        val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-    } else if ( size == 4 ) val = (int)*LONGP(cp, size);
+    else if ( size == 3 ) val = SIGNED_24BITS((int)*LONGP(cp, size));
+    else if ( size == 4 ) val = (int)*LONGP(cp, size);
     prevdiff = val - prevval;
 
     for ( i=size; i<len; i+= size) {
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
-    	  else if ( size == 3 ) {
-            val = (int)*LONGP(cp, i) & 0x00ffffff;
-            val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-        } else if ( size == 4 ) val = (int)*LONGP(cp, i);
+        else if ( size == 3 ) val = SIGNED_24BITS((int)*LONGP(cp, i));
+        else if ( size == 4 ) val = (int)*LONGP(cp, i);
         diff = val - prevval;
         if ( diff*prevdiff < 0 ) {
             /* Derivative changed sign. Compute difference to
@@ -810,11 +793,8 @@ audioop_cross(PyObject *self, PyObject *args)
     for ( i=0; i<len; i+= size) {
         if ( size == 1 )      val = ((int)*CHARP(cp, i)) >> 7;
         else if ( size == 2 ) val = ((int)*SHORTP(cp, i)) >> 15;
-    	  else if ( size == 3 ) {
-            val = (int)*LONGP(cp, i) & 0x00ffffff;
-            val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-						val = val >> 23;
-        } else if ( size == 4 ) val = ((int)*LONGP(cp, i)) >> 31;
+        else if ( size == 3 ) val = SIGNED_24BITS((int)*LONGP(cp, i)) >> 23;
+        else if ( size == 4 ) val = ((int)*LONGP(cp, i)) >> 31;
         val = val & 1;
         if ( val != prevval ) ncross++;
         prevval = val;
@@ -853,10 +833,8 @@ audioop_mul(PyObject *self, PyObject *args)
     for ( i=0; i < len; i += size ) {
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i);
-    	  else if ( size == 3 ) {
-            val = (int)*LONGP(cp, i) & 0x00ffffff;
-            val |= (val & 0x00800000) ? 0xff000000 : 0x00000000;
-        } else if ( size == 4 ) val = (int)*LONGP(cp, i);
+        else if ( size == 3 ) val = SIGNED_24BITS((int)*LONGP(cp, i));
+        else if ( size == 4 ) val = (int)*LONGP(cp, i);
         fval = (double)val*factor;
         if ( fval > maxval ) fval = maxval;
         else if ( fval < -maxval ) fval = -maxval;
@@ -906,16 +884,12 @@ audioop_tomono(PyObject *self, PyObject *args)
     for ( i=0; i < len; i += size*2 ) {
         if ( size == 1 )      val1 = (int)*CHARP(cp, i);
         else if ( size == 2 ) val1 = (int)*SHORTP(cp, i);
-    	  else if ( size == 3 ) {
-            val1 = (int)*LONGP(cp, i) & 0x00ffffff;
-            val1 |= (val1 & 0x00800000) ? 0xff000000 : 0x00000000;
-        } else if ( size == 4 ) val1 = (int)*LONGP(cp, i);
+        else if ( size == 3 ) val1 = SIGNED_24BITS((int)*LONGP(cp, i));
+        else if ( size == 4 ) val1 = (int)*LONGP(cp, i);
         if ( size == 1 )      val2 = (int)*CHARP(cp, i+1);
         else if ( size == 2 ) val2 = (int)*SHORTP(cp, i+2);
-    	  else if ( size == 3 ) {
-            val2 = (int)*LONGP(cp, i+3) & 0x00ffffff;
-            val2 |= (val2 & 0x00800000) ? 0xff000000 : 0x00000000;
-        } else if ( size == 4 ) val2 = (int)*LONGP(cp, i+4);
+        else if ( size == 3 ) val2 = SIGNED_24BITS((int)*LONGP(cp, i+3));
+        else if ( size == 4 ) val2 = (int)*LONGP(cp, i+4);
         fval = (double)val1*fac1 + (double)val2*fac2;
         if ( fval > maxval ) fval = maxval;
         else if ( fval < -maxval ) fval = -maxval;

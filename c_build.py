@@ -1,11 +1,12 @@
 from distutils.core import setup, Extension
 
-#module1 = Extension('audioop',
-#                    sources = ['audioop.c'],
-#										define_macros = [('DEBUG',None)])
-
 module1 = Extension('audioop',
-                    sources = ['audioop.c'])
+#										extra_compile_args = ['-E'],
+                    sources = ['audioop.c'],
+										define_macros = [('DEBUG',None)])
+
+#module1 = Extension('audioop',
+#                    sources = ['audioop.c'])
 
 setup (name = 'audioop',
        version = '1.0',
