@@ -1,4 +1,5 @@
 /* audioopmodule - Module to detect peak values in arrays */
+/* extended by Jon Arne Jørgensen */
 
 #include <stdio.h>
 
