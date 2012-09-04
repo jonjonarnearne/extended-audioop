@@ -1759,31 +1759,31 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef audioop_methods[] = {
-    { "max", audioop_max, METH_VARARGS },
-    { "minmax", audioop_minmax, METH_VARARGS },
-    { "avg", audioop_avg, METH_VARARGS },
-    { "maxpp", audioop_maxpp, METH_VARARGS },
-    { "avgpp", audioop_avgpp, METH_VARARGS },
-    { "rms", audioop_rms, METH_VARARGS },
-    { "findfit", audioop_findfit, METH_VARARGS },
-    { "findmax", audioop_findmax, METH_VARARGS },
-    { "findfactor", audioop_findfactor, METH_VARARGS },
-    { "cross", audioop_cross, METH_VARARGS },
-    { "mul", audioop_mul, METH_VARARGS },
-    { "add", audioop_add, METH_VARARGS },
-    { "bias", audioop_bias, METH_VARARGS },
-    { "ulaw2lin", audioop_ulaw2lin, METH_VARARGS },
-    { "lin2ulaw", audioop_lin2ulaw, METH_VARARGS },
-    { "alaw2lin", audioop_alaw2lin, METH_VARARGS },
-    { "lin2alaw", audioop_lin2alaw, METH_VARARGS },
-    { "lin2lin", audioop_lin2lin, METH_VARARGS },
+    { "max", audioop_max, METH_VARARGS }, 								// Extended
+    { "minmax", audioop_minmax, METH_VARARGS }, 					// Extended
+    { "avg", audioop_avg, METH_VARARGS }, 								// Extended
+    { "maxpp", audioop_maxpp, METH_VARARGS },							// Extended
+    { "avgpp", audioop_avgpp, METH_VARARGS },							// Extended
+    { "rms", audioop_rms, METH_VARARGS },									// Extended
+    { "findfit", audioop_findfit, METH_VARARGS },					// Not tested
+    { "findmax", audioop_findmax, METH_VARARGS },					// Not tested
+    { "findfactor", audioop_findfactor, METH_VARARGS },		// Not tested
+    { "cross", audioop_cross, METH_VARARGS },							// Extended
+    { "mul", audioop_mul, METH_VARARGS },									// Extended
+    { "add", audioop_add, METH_VARARGS },									// Extended
+    { "bias", audioop_bias, METH_VARARGS },								// Extended
+    { "ulaw2lin", audioop_ulaw2lin, METH_VARARGS },				// Extended
+    { "lin2ulaw", audioop_lin2ulaw, METH_VARARGS },				// Extended
+    { "alaw2lin", audioop_alaw2lin, METH_VARARGS },				// Extended
+    { "lin2alaw", audioop_lin2alaw, METH_VARARGS },				// Extended
+    { "lin2lin", audioop_lin2lin, METH_VARARGS },					// Extended
     { "adpcm2lin", audioop_adpcm2lin, METH_VARARGS },
-    { "lin2adpcm", audioop_lin2adpcm, METH_VARARGS },
-    { "tomono", audioop_tomono, METH_VARARGS },
-    { "tostereo", audioop_tostereo, METH_VARARGS },
-    { "getsample", audioop_getsample, METH_VARARGS },
-    { "reverse", audioop_reverse, METH_VARARGS },
-    { "ratecv", audioop_ratecv, METH_VARARGS },
+    { "lin2adpcm", audioop_lin2adpcm, METH_VARARGS },			// Extended
+    { "tomono", audioop_tomono, METH_VARARGS },						// Extended
+    { "tostereo", audioop_tostereo, METH_VARARGS },				// Extended
+    { "getsample", audioop_getsample, METH_VARARGS },			// Extended
+    { "reverse", audioop_reverse, METH_VARARGS },					// Extended
+    { "ratecv", audioop_ratecv, METH_VARARGS },						// Extended
     { 0,          0 }
 };
 

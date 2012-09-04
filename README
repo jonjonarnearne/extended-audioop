@@ -1,0 +1,8 @@
+Extended Audioop
+By Jon Arne Jørgensen <jonjon.arnearne@gmail.com>
+
+This is as the name implies an extension on the original audioop python module.
+I've ported all functions except adpcm2lin since I don't have any adpcm files to test with.
+
+I have not done any changes to findfit, findmax and findfactor.
+I bellieve these functions should work unmodified, but I've not tested them.
