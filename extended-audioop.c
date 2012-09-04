@@ -1791,7 +1791,7 @@ PyMODINIT_FUNC
 initaudioop(void)
 {
     PyObject *m, *d;
-    m = Py_InitModule("audioop", audioop_methods);
+    m = Py_InitModule("extended-audioop", audioop_methods);
     if (m == NULL)
         return;
     d = PyModule_GetDict(m);
