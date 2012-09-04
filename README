@@ -8,3 +8,8 @@ I've ported all functions except adpcm2lin since I don't have any adpcm files to
 
 I have not done any changes to findfit, findmax and findfactor.
 I think these 3 functions should work unmodified, but I've not tested them.
+
+COPYING:
+I have not been able to find the license of the original audioop file yet.
+This module is of course licensed under the same conditions as the original.
+
