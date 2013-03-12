@@ -17,6 +17,10 @@ typedef unsigned long Py_UInt32;
 #endif
 #endif
 
+#if SIZEOF_FLOAT == 4
+#define ENABLE_FLOAT2INT
+#endif
+
 typedef short PyInt16;
 
 typedef struct Py_Int24_Tag { signed char buf[3]; } Py_Int24;
@@ -1883,36 +1887,84 @@ static PyObject *audioop_endianconv(PyObject *self, PyObject *args)
 
 	return rv;
 }
+
+#ifdef ENABLE_FLOAT2INT
+static PyObject *audioop_float2int(PyObject *self, PyObject *args)
+{
+	signed char *chunk;
+	float *in_sample;
+	
+	int len, i;
+	Py_Int32 *out_sample;
+
+	PyObject *rv;
+	
+	if (!PyArg_ParseTuple(args, "s#:float2int", &chunk, &len)) {
+		return NULL;
+	}
+
+	if (len % 4) {
+		PyErr_SetString(AudioopError,
+				"Array length does not match 32bit float");
+		return NULL;
+	}
+
+	rv = PyString_FromStringAndSize(NULL, len);
+	if (rv == 0) {
+		return NULL;
+	}
+
+	len /= 4;
+	in_sample = (float *)chunk;
+	out_sample = (Py_Int32 *)PyString_AsString(rv);
+	for (i = 0; i < len; i++) {
+		in_sample[i] *= 0x7fffffff;
+		out_sample[i] = (int)(in_sample[i] + 0.5);
+	}
+
+	return rv;
+}
+#else
+static PyObject *audioop_float2int(PyObject *self, PyObject *args)
+{
+	printf("SIZEOF_FLOAT: %d\n", SIZEOF_FLOAT);
+	PyErr_SetString(AudioopError,
+			"float2int is not available on your system");
+	return NULL;
+}
+#endif
+
 static PyMethodDef audioop_methods[] = {
-    { "max", audioop_max, METH_VARARGS }, 								// Extended
-    { "minmax", audioop_minmax, METH_VARARGS }, 					// Extended
-    { "avg", audioop_avg, METH_VARARGS }, 								// Extended
-    { "maxpp", audioop_maxpp, METH_VARARGS },							// Extended
-    { "avgpp", audioop_avgpp, METH_VARARGS },							// Extended
-    { "rms", audioop_rms, METH_VARARGS },									// Extended
-    { "findfit", audioop_findfit, METH_VARARGS },					// Not tested
-    { "findmax", audioop_findmax, METH_VARARGS },					// Not tested
-    { "findfactor", audioop_findfactor, METH_VARARGS },		// Not tested
-    { "cross", audioop_cross, METH_VARARGS },							// Extended
-    { "mul", audioop_mul, METH_VARARGS },									// Extended
-    { "add", audioop_add, METH_VARARGS },									// Extended
-    { "bias", audioop_bias, METH_VARARGS },								// Extended
-    { "ulaw2lin", audioop_ulaw2lin, METH_VARARGS },				// Extended
-    { "lin2ulaw", audioop_lin2ulaw, METH_VARARGS },				// Extended
-    { "alaw2lin", audioop_alaw2lin, METH_VARARGS },				// Extended
-    { "lin2alaw", audioop_lin2alaw, METH_VARARGS },				// Extended
-    { "lin2lin", audioop_lin2lin, METH_VARARGS },					// Extended
-    { "adpcm2lin", audioop_adpcm2lin, METH_VARARGS },
-    { "lin2adpcm", audioop_lin2adpcm, METH_VARARGS },			// Extended
-    { "tomono", audioop_tomono, METH_VARARGS },						// Extended
-    { "tostereo", audioop_tostereo, METH_VARARGS },				// Extended
-    { "getsample", audioop_getsample, METH_VARARGS },			// Extended
-    { "reverse", audioop_reverse, METH_VARARGS },					// Extended
-    { "ratecv", audioop_ratecv, METH_VARARGS },						// Extended
-    { "endianconv", audioop_endianconv, METH_VARARGS },		// Extended
-    { "endianconv2", audioop_endianconv_2, METH_VARARGS },// Extended
-    { "endianconv3", audioop_endianconv_3, METH_VARARGS },// Extended
-    { 0,          0 }
+	{ "max", audioop_max, METH_VARARGS },			// Extended
+	{ "minmax", audioop_minmax, METH_VARARGS },		// Extended
+	{ "avg", audioop_avg, METH_VARARGS },			// Extended
+	{ "maxpp", audioop_maxpp, METH_VARARGS },		// Extended
+	{ "avgpp", audioop_avgpp, METH_VARARGS },		// Extended
+	{ "rms", audioop_rms, METH_VARARGS },			// Extended
+	{ "findfit", audioop_findfit, METH_VARARGS },		// ** Not tested
+	{ "findmax", audioop_findmax, METH_VARARGS },		// ** Not tested
+	{ "findfactor", audioop_findfactor, METH_VARARGS },	// ** Not tested
+	{ "cross", audioop_cross, METH_VARARGS },		// Extended
+	{ "mul", audioop_mul, METH_VARARGS },			// Extended
+	{ "add", audioop_add, METH_VARARGS },			// Extended
+	{ "bias", audioop_bias, METH_VARARGS },			// Extended
+	{ "ulaw2lin", audioop_ulaw2lin, METH_VARARGS },		// Extended
+	{ "lin2ulaw", audioop_lin2ulaw, METH_VARARGS },		// Extended
+	{ "alaw2lin", audioop_alaw2lin, METH_VARARGS },		// Extended
+	{ "lin2alaw", audioop_lin2alaw, METH_VARARGS },		// Extended
+	{ "lin2lin", audioop_lin2lin, METH_VARARGS },		// Extended
+	{ "adpcm2lin", audioop_adpcm2lin, METH_VARARGS },
+	{ "lin2adpcm", audioop_lin2adpcm, METH_VARARGS },	// Extended
+	{ "tomono", audioop_tomono, METH_VARARGS },		// Extended
+	{ "tostereo", audioop_tostereo, METH_VARARGS },		// Extended
+	{ "getsample", audioop_getsample, METH_VARARGS },	// Extended
+	{ "reverse", audioop_reverse, METH_VARARGS },		// Extended
+	{ "ratecv", audioop_ratecv, METH_VARARGS },		// Extended
+	{ "endianconv", audioop_endianconv, METH_VARARGS },	// Extended
+	{ "endianconv2", audioop_endianconv_2, METH_VARARGS },	// Extended
+	{ "endianconv3", audioop_endianconv_3, METH_VARARGS },	// Extended
+	{ "float2int", audioop_float2int, METH_VARARGS },	// Extended
+	{ 0,          0 }
 };
 
 PyMODINIT_FUNC
@@ -1929,3 +1981,4 @@ initextended_audioop(void)
     if (AudioopError != NULL)
          PyDict_SetItemString(d,"error",AudioopError);
 }
+
