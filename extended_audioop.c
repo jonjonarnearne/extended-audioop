@@ -1934,6 +1934,57 @@ static PyObject *audioop_float2int(PyObject *self, PyObject *args)
 }
 #endif
 
+static PyObject *audioop_channelmerge(PyObject *self, PyObject *args)
+{
+	int width;
+
+	PyObject *arg;
+	int i,e,len = 0;
+	int argc = PyTuple_Size(args);
+	int streams = argc - 1;
+	char **chunks;
+	char *rptr;
+	PyObject *rv;
+
+	arg = PyTuple_GetItem(args, 0);
+	width = PyInt_AsLong(arg);
+	if (width == -1) {
+		return PyErr_Format(PyExc_TypeError, "channelmerge() first argument must be unsigned integer");
+	}
+
+	if (argc < 3) {
+		return PyErr_Format(PyExc_TypeError, "channelmerge() takes at least 3 arguments (%d given)", argc);
+	}
+
+	chunks = malloc(sizeof(char *) * streams);
+
+	for (i = 1; i < argc; i++) {
+		arg = PyTuple_GetItem(args, i);
+		if (PyString_Check(arg)) {
+			len = PyString_Size(arg);
+			chunks[i-1] = PyString_AsString(arg);
+		}
+	}
+
+	rv = PyString_FromStringAndSize(NULL, len * streams);
+	if (rv == 0) {
+		return NULL;
+	}
+	rptr = PyString_AsString(rv);
+
+	for(i = 0; i < len; i = i + width) {
+                for(e = 0; e < streams; e++) {
+                        memcpy(rptr, chunks[e] + i, width);
+                        rptr += width;
+                }
+        }
+
+
+	free(chunks);
+	return rv;
+
+}
+
 static PyMethodDef audioop_methods[] = {
 	{ "max", audioop_max, METH_VARARGS },			// Extended
 	{ "minmax", audioop_minmax, METH_VARARGS },		// Extended
@@ -1964,6 +2015,7 @@ static PyMethodDef audioop_methods[] = {
 	{ "endianconv2", audioop_endianconv_2, METH_VARARGS },	// Extended
 	{ "endianconv3", audioop_endianconv_3, METH_VARARGS },	// Extended
 	{ "float2int", audioop_float2int, METH_VARARGS },	// Extended
+	{ "channelmerge", audioop_channelmerge, METH_VARARGS }, // Extended
 	{ 0,          0 }
 };
 
