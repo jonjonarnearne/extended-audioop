@@ -1939,7 +1939,7 @@ static PyObject *audioop_channelmerge(PyObject *self, PyObject *args)
 	int width;
 
 	PyObject *arg;
-	int i,e,len = 0;
+	int i,e,len = 0, prev_len = 0;
 	int argc = PyTuple_Size(args);
 	int streams = argc - 1;
 	char **chunks;
@@ -1960,16 +1960,32 @@ static PyObject *audioop_channelmerge(PyObject *self, PyObject *args)
 
 	for (i = 1; i < argc; i++) {
 		arg = PyTuple_GetItem(args, i);
-		if (PyString_Check(arg)) {
-			len = PyString_Size(arg);
-			chunks[i-1] = PyString_AsString(arg);
+		if (!PyString_Check(arg)) {
+			free(chunks);
+			return PyErr_Format(PyExc_TypeError, "channelmerge(): arg %d is not string", i);
 		}
+
+		len = PyString_Size(arg);
+		chunks[i-1] = PyString_AsString(arg);
+
+		if (!len) {
+			free(chunks);
+			return PyErr_Format(PyExc_TypeError, "channelmerge(): arg %d is an empty string", i);
+		}
+		if (prev_len && prev_len != len) {
+			free(chunks);
+			return PyErr_Format(PyExc_TypeError, "channelmerge(): audio stream sizes don't match");
+		}
+
+		prev_len = len;
 	}
 
 	rv = PyString_FromStringAndSize(NULL, len * streams);
 	if (rv == 0) {
+		free(chunks);
 		return NULL;
 	}
+
 	rptr = PyString_AsString(rv);
 
 	for(i = 0; i < len; i = i + width) {
